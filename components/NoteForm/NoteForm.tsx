@@ -64,7 +64,7 @@ export default function NoteForm() {
           type="text"
           id="title"
           name="title"
-          defaultValue={draft.title}
+          value={draft.title} 
           onChange={handleInputChange}
           className={css.input}
           disabled={isPending}
@@ -76,7 +76,7 @@ export default function NoteForm() {
         <select
           id="tag"
           name="tag"
-          defaultValue={draft.tag}
+          value={draft.tag} 
           onChange={handleInputChange}
           className={css.select}
           disabled={isPending}
@@ -94,7 +94,7 @@ export default function NoteForm() {
         <textarea
           id="content"
           name="content"
-          defaultValue={draft.content}
+          value={draft.content} 
           onChange={handleInputChange}
           className={css.textarea}
           disabled={isPending}
