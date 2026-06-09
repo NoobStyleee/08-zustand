@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useNoteStore } from '../../lib/store/noteStore';
 import { createNote } from '../../lib/api'; 
@@ -13,8 +13,21 @@ export default function NoteForm() {
   const queryClient = useQueryClient();
   
   const { draft, setDraft, clearDraft } = useNoteStore();
-
   const [isHydrated, setIsHydrated] = useState(false);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      toast.success('Note successfully created!');
+      clearDraft();
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      router.push('/notes/filter/all');
+    },
+    onError: () => {
+      toast.error('Failed to create note. Please try again.');
+    },
+  });
+
   useEffect(() => {
     setIsHydrated(true);
   }, []);
@@ -25,10 +38,10 @@ export default function NoteForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setDraft({ [name]: value });
+    setDraft({ ...draft, [name]: value });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!draft.title.trim() || !draft.content.trim()) {
@@ -36,17 +49,7 @@ export default function NoteForm() {
       return;
     }
 
-    try {
-      await createNote(draft); 
-      
-      toast.success('Note successfully created!');
-      clearDraft();
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      
-      router.push('/notes/filter/all');
-    } catch (error) {
-      toast.error('Failed to create note. Please try again.');
-    }
+    mutate(draft);
   };
 
   const handleCancel = () => {
@@ -64,6 +67,7 @@ export default function NoteForm() {
           defaultValue={draft.title}
           onChange={handleInputChange}
           className={css.input}
+          disabled={isPending}
         />
       </div>
 
@@ -75,11 +79,13 @@ export default function NoteForm() {
           defaultValue={draft.tag}
           onChange={handleInputChange}
           className={css.select}
+          disabled={isPending}
         >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
           <option value="Personal">Personal</option>
-          <option value="Ideas">Ideas</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
         </select>
       </div>
 
@@ -91,15 +97,25 @@ export default function NoteForm() {
           defaultValue={draft.content}
           onChange={handleInputChange}
           className={css.textarea}
+          disabled={isPending}
         />
       </div>
 
       <div className={css.actions}>
-        <button type="button" onClick={handleCancel} className={css.cancelBtn}>
+        <button 
+          type="button" 
+          onClick={handleCancel} 
+          className={css.cancelBtn}
+          disabled={isPending}
+        >
           Cancel
         </button>
-        <button type="submit" className={css.submitBtn}>
-          Create
+        <button 
+          type="submit" 
+          className={css.submitBtn}
+          disabled={isPending}
+        >
+          {isPending ? 'Creating...' : 'Create'}
         </button>
       </div>
     </form>

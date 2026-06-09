@@ -1,54 +1,48 @@
 'use client';
 
-import "modern-normalize";
+import { useState, useEffect } from "react";
+// 👍 ПРАВИЛЬНИЙ ІМПОРТ ДЛЯ LINK
+import Link from "next/link"; 
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useDebouncedCallback } from "use-debounce";
+import { Toaster } from "react-hot-toast";
+
 import Loader from "../../../../components/Loader/Loader";
 import ErrorMessage from "../../../../components/ErrorMessage/ErrorMessage";
 import Pagination from "../../../../components/Pagination/Pagination";
 import SearchBox from "../../../../components/SearchBox/SearchBox";
-import Modal from "../../../../components/Modal/Modal";
-import NoteForm from "../../../../components/NoteForm/NoteForm";
-import { useState, useEffect } from "react";
-import { fetchNotes } from "../../../../lib/api";
 import NoteList from "../../../../components/NoteList/NoteList";
-import { useDebouncedCallback } from "use-debounce";
-import { Toaster } from "react-hot-toast";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+
+import { fetchNotes } from "../../../../lib/api";
 import { notifyNoNote } from "../../../../lib/toast";
 import css from "./Notes.client.module.css"; 
 
 interface NotesClientProps {
-  initialTag?: string;
+  tag?: string; // Вимога ментора: замість initialTag використовуємо просто tag
 }
 
-function NotesClient({ initialTag }: NotesClientProps) {
-  const [createNoteThis, setCreateNoteThis] = useState(false);
-  const [input, setInput] = useState("");
-  const [query, setQuery] = useState("");
+function NotesClient({ tag }: NotesClientProps) {
+  // Вимога ментора: зрозумілі назви для стейтів пошуку
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, isSuccess } = useQuery({
-    queryKey: ["notes", page, query, initialTag],
+    queryKey: ["notes", page, debouncedQuery, tag],
     queryFn: () =>
       fetchNotes({
         page,
-        search: query || undefined,
+        search: debouncedQuery || undefined,
         perPage: 12,
-        tag: initialTag,
+        tag: tag,
       }),
     placeholderData: keepPreviousData,
   });
 
+  // 👍 ВИПРАВЛЕНО: тепер викликається правильна функція setDebouncedQuery
   const debouncedSetQuery = useDebouncedCallback((value: string) => {
-    setQuery(value);
+    setDebouncedQuery(value);
   }, 500);
-
-  const openModal = () => {
-    setCreateNoteThis(true);
-  };
-
-  const closeModal = () => {
-    setCreateNoteThis(false);
-  };
 
   useEffect(() => {
     if (data?.notes && data.notes.length === 0) {
@@ -58,7 +52,7 @@ function NotesClient({ initialTag }: NotesClientProps) {
 
   useEffect(() => {
     setPage(1);
-  }, [query, initialTag]);
+  }, [debouncedQuery, tag]);
 
   const totalPages = data?.totalPages ?? 0;
 
@@ -66,9 +60,9 @@ function NotesClient({ initialTag }: NotesClientProps) {
     <div className={css.app}>
       <header className={css.toolbar}>
         <SearchBox
-          value={input}
+          value={searchInput}
           onChange={(val) => {
-            setInput(val);
+            setSearchInput(val);
             debouncedSetQuery(val);
           }}
         />
@@ -77,9 +71,9 @@ function NotesClient({ initialTag }: NotesClientProps) {
           <Pagination totalPages={totalPages} page={page} setPage={setPage} />
         )}
 
-        <button className={css.button} onClick={openModal}>
+        <Link href="/notes/action/create" className={css.button}>
           Create note +
-        </button>
+        </Link>
       </header>
 
       {isLoading && <Loader />}
@@ -90,12 +84,6 @@ function NotesClient({ initialTag }: NotesClientProps) {
       )}
 
       <Toaster position="top-center" reverseOrder={false} />
-
-      {createNoteThis && (
-  <Modal onClose={closeModal}>
-    <NoteForm /> 
-  </Modal>
-)}
     </div>
   );
 }
