@@ -92,10 +92,10 @@ function NotesClient({ initialTag }: NotesClientProps) {
       <Toaster position="top-center" reverseOrder={false} />
 
       {createNoteThis && (
-        <Modal onClose={closeModal}>
-          <NoteForm onClose={closeModal} />
-        </Modal>
-      )}
+  <Modal onClose={closeModal}>
+    <NoteForm /> 
+  </Modal>
+)}
     </div>
   );
 }
