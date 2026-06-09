@@ -84,11 +84,11 @@ function App() {
 
       <Toaster position="top-center" reverseOrder={false} />
 
-      {createNoteThis && (
-        <Modal onClose={closeModal}>
-          <NoteForm onClose={closeModal} />
-        </Modal>
-      )}
+     {createNoteThis && (
+  <Modal onClose={closeModal}>
+    <NoteForm /> 
+  </Modal>
+)}
     </div>
   );
 }
